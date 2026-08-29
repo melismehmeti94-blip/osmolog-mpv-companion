@@ -1,0 +1,72 @@
+{
+  "name": "osmolog-mpv-companion",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Windows MPV companion with an Osmolog mini window and tray tracker.",
+  "author": "Osmolog",
+  "main": "src/app/main.js",
+  "scripts": {
+    "start": "electron src/app/main.js",
+    "start:headless": "node src/index.js",
+    "test": "node --test test/*.test.js",
+    "pack:win": "electron-builder --win portable --x64",
+    "dist": "npm run test && npm run pack:win"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "koffi": "^2.14.1",
+    "ws": "^8.18.3"
+  },
+  "devDependencies": {
+    "electron": "^44.0.0",
+    "electron-builder": "^26.15.3"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/melismehmeti94-blip/osmolog-mpv-companion.git"
+  },
+  "homepage": "https://github.com/melismehmeti94-blip/osmolog-mpv-companion#readme",
+  "bugs": {
+    "url": "https://github.com/melismehmeti94-blip/osmolog-mpv-companion/issues"
+  },
+  "build": {
+    "appId": "com.osmolog.mpv-companion",
+    "productName": "Osmolog Companion",
+    "asar": true,
+    "asarUnpack": [
+      "node_modules/koffi/build/koffi/win32_x64/*.node"
+    ],
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "src/**/*",
+      "assets/**/*",
+      "package.json",
+      "!node_modules/koffi/doc/**/*",
+      "!node_modules/koffi/src/**/*",
+      "!node_modules/koffi/vendor/**/*",
+      "!node_modules/koffi/build/koffi/darwin_*/**/*",
+      "!node_modules/koffi/build/koffi/freebsd_*/**/*",
+      "!node_modules/koffi/build/koffi/linux_*/**/*",
+      "!node_modules/koffi/build/koffi/musl_*/**/*",
+      "!node_modules/koffi/build/koffi/openbsd_*/**/*",
+      "!node_modules/koffi/build/koffi/win32_arm64/**/*",
+      "!node_modules/koffi/build/koffi/win32_ia32/**/*"
+    ],
+    "win": {
+      "icon": "assets/icon-256.png",
+      "requestedExecutionLevel": "asInvoker",
+      "target": [
+        "portable"
+      ],
+      "artifactName": "Osmolog-Companion-${version}-${arch}.${ext}"
+    }
+  },
+  "allowScripts": {
+    "electron": true,
+    "koffi": true
+  }
+}

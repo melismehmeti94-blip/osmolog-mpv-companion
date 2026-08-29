@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Osmolog Companion</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <main id="appShell" class="app-shell" data-mode="expanded">
+    <section id="expandedWindow" class="expanded-window" aria-label="Osmolog Companion">
+      <header class="titlebar">
+        <span class="product-lockup"><img src="../../assets/osmolog-icon-small.svg" alt=""><span class="product-name">OSMOLOG COMPANION</span></span>
+        <span id="connectionStatus" class="connection-status"><i></i><b>STARTING</b></span>
+        <span class="window-actions">
+          <button id="minimizeButton" type="button" aria-label="Minimize to compact overlay">−</button>
+          <button id="closeButton" type="button" aria-label="Close to system tray">×</button>
+        </span>
+      </header>
+
+      <div class="window-body">
+        <section id="setupPanel" class="setup-panel" aria-live="polite">
+          <small id="setupEyebrow">GETTING READY</small>
+          <h1 id="setupTitle">Starting companion…</h1>
+          <p id="setupCopy">Connecting the local tracker.</p>
+          <div id="setupActions" class="setup-actions">
+            <button id="pairButton" class="primary-button" type="button">Open Osmolog</button>
+          </div>
+          <p id="setupFeedback" class="setup-feedback" role="status"></p>
+        </section>
+
+        <section id="trackingPanel" class="tracking-panel" hidden>
+          <div class="tracking-toolbar">
+            <div class="section-eyebrow">MPV · TRACKING</div>
+            <label for="languageSelect"><span>Language</span><select id="languageSelect"><option value="ja">Japanese</option><option value="en">English</option><option value="sv">Swedish</option><option value="es">Spanish</option><option value="fr">French</option><option value="de">German</option><option value="ko">Korean</option><option value="zh">Chinese</option></select></label>
+          </div>
+          <div class="now-playing">
+            <div class="source-symbol" aria-hidden="true">MPV</div>
+            <div class="media-copy"><h1 id="mediaTitle">No media loaded</h1><p><i id="modeDot"></i><span id="modeLabel">Ready to track</span></p></div>
+          </div>
+          <div class="metric-grid">
+            <div><small>THIS FILE</small><strong id="fileTime">0s</strong></div>
+            <div><small id="todayLabel" title="All Osmolog sources for this language">OSMOLOG TODAY · JA</small><strong id="todayTime">0s</strong></div>
+            <div><small>PLAYBACK SPEED</small><strong id="speedValue">1.0×</strong></div>
+          </div>
+          <div class="attention-split"><div><span id="activeLabel">Active 0m</span><span id="passiveLabel">Passive 0m</span></div><div class="split-track"><i id="activeTrack"></i><em id="passiveTrack"></em></div></div>
+          <footer><span id="footerStatus">Closing keeps tracking in the tray.</span><span class="footer-actions"><button id="pairAgain" type="button" hidden>RECONNECT OSMOLOG</button><button id="openDashboard" type="button">OPEN DASHBOARD</button></span></footer>
+        </section>
+      </div>
+    </section>
+
+    <button id="compactOverlay" class="compact-overlay" type="button" aria-label="Move companion; click to expand" hidden>
+      <i id="compactDot"></i><strong id="compactTime">0s</strong><span id="compactLanguage">JAPANESE</span>
+    </button>
+  </main>
+  <script src="renderer.js"></script>
+</body>
+</html>
