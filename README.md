@@ -136,7 +136,6 @@ traditional installer, and code signing are not included yet.
 
 ## License
 
-No open-source license has been selected yet. The repository is public for
-transparency and distribution, but public availability alone does not grant
-permission to copy, modify, or redistribute the source. A formal license should
-be selected before accepting outside code contributions.
+The companion source code is available under the [MIT License](LICENSE).
+The Osmolog name, logo, and product identity are not licensed for third-party
+builds; see [TRADEMARKS.md](TRADEMARKS.md).

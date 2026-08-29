@@ -1,9 +1,9 @@
 # Contributing
 
 Bug reports and focused design discussions are welcome. Before proposing a
-code change, open an issue describing the behavior and test case. A formal
-source license has not yet been selected, so outside pull requests should wait
-until contribution and licensing terms are published.
+code change, open an issue describing the behavior and test case. By submitting
+a contribution, you agree that it may be distributed under this repository's
+MIT License.
 
 For local verification:
 
