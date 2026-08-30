@@ -9,7 +9,7 @@
     "start": "electron src/app/main.js",
     "start:headless": "node src/index.js",
     "test": "node --test test/app-contract.test.js test/auto-launch.test.js test/auto-update.test.js test/journal.test.js test/language-preference.test.js test/mpv-ipc.test.js test/service-lifecycle.test.js test/sync-controller.test.js test/tracking.test.js test/transport.test.js",
-    "pack:win": "electron-builder --win --x64",
+    "pack:win": "electron-builder --win --x64 --publish never",
     "dist": "npm run test && npm run pack:win"
   },
   "engines": {
