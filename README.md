@@ -13,7 +13,7 @@ by the extension, or close it to the system tray.
 ## Download
 
 Download the latest release from
-[GitHub Releases](https://github.com/melismehmeti94-blip/osmolog-mpv-companion/releases):
+[GitHub Releases](https://github.com/MelisMehmeti/osmolog-mpv-companion/releases):
 
 - **Setup** is recommended. It installs for the current Windows user without
   administrator access and downloads future companion updates automatically.

@@ -26,11 +26,11 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/melismehmeti94-blip/osmolog-mpv-companion.git"
+    "url": "https://github.com/MelisMehmeti/osmolog-mpv-companion.git"
   },
-  "homepage": "https://github.com/melismehmeti94-blip/osmolog-mpv-companion#readme",
+  "homepage": "https://github.com/MelisMehmeti/osmolog-mpv-companion#readme",
   "bugs": {
-    "url": "https://github.com/melismehmeti94-blip/osmolog-mpv-companion/issues"
+    "url": "https://github.com/MelisMehmeti/osmolog-mpv-companion/issues"
   },
   "build": {
     "appId": "com.osmolog.mpv-companion",
@@ -60,7 +60,7 @@
     "publish": [
       {
         "provider": "github",
-        "owner": "melismehmeti94-blip",
+        "owner": "MelisMehmeti",
         "repo": "osmolog-mpv-companion",
         "releaseType": "release"
       }
