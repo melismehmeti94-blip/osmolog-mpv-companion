@@ -45,8 +45,9 @@ Restart mpv after saving the file, then start Osmolog Companion.
 
 1. Start the companion and mpv.
 2. Open Osmolog in Chrome.
-3. Open **Settings → MPV Companion** and select **Connect MPV**.
-4. Approve Chrome's one-time local access prompt if it appears.
+3. Open the dashboard, then go to **Connections → Apps & players**.
+4. In the **MPV Companion** card, select **Reconnect now**.
+5. Approve Chrome's one-time local access prompt if it appears.
 
 After that first permission, the dashboard does **not** need to be open. The
 extension reconnects to the companion in the background. The trusted extension
