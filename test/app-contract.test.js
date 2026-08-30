@@ -57,7 +57,8 @@ test("lifecycle controls expose auto-start and in-place sync without technical p
 
   assert.match(html, /id="runOnlyWithMpvToggle"/);
   assert.match(html, /Automatically open when MPV opens/);
-  assert.match(html, /Keep this EXE in a permanent folder before enabling/);
+  assert.match(html, /id="autoLaunchDescription"/);
+  assert.match(html, /id="updateStatus"/);
   assert.match(html, /id="syncNowButton"[^>]*>Sync now<\/button>/);
   assert.doesNotMatch(html, /MPV path|configuration folder/);
   assert.match(preload, /setRunOnlyWithMpv/);
@@ -65,6 +66,9 @@ test("lifecycle controls expose auto-start and in-place sync without technical p
   assert.match(renderer, /companionApi\.setRunOnlyWithMpv\(toggle\.checked\)/);
   assert.match(renderer, /companionApi\.syncNow\(\)/);
   assert.match(main, /syncWithChrome/);
+  assert.match(main, /createAutoUpdateController/);
+  assert.match(renderer, /Portable version · download updates manually/);
+  assert.match(renderer, /will install after this app closes/);
 });
 
 test("before-connection UI automatically discovers Osmolog without exposing extension IDs", () => {

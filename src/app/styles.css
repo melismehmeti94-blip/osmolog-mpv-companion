@@ -81,7 +81,9 @@ footer { display: flex; align-items: center; justify-content: space-between; gap
 #syncNowButton { min-height: 34px; padding: 0 13px; border: 1px solid var(--cyan); border-radius: 7px; background: transparent; color: var(--cyan); font-weight: 700; }
 #syncNowButton:hover { background: rgb(67 203 224 / 10%); }
 #syncNowButton:disabled { cursor: wait; opacity: .65; }
-#lifecycleFeedback { grid-column: 1 / -1; min-height: 0; margin: 0; color: var(--secondary); font-size: 10px; text-align: center; }
+#updateStatus, #lifecycleFeedback { grid-column: 1 / -1; min-height: 0; margin: 0; color: var(--secondary); font-size: 10px; text-align: center; }
+#updateStatus.is-ready { color: var(--green); }
+#updateStatus.is-error { color: var(--danger); }
 #lifecycleFeedback:empty { display: none; }
 .compact-overlay { display: grid; width: 156px; height: 42px; grid-template-columns: 12px auto minmax(0, 1fr); align-items: center; gap: 8px; margin: 0; padding: 0 14px 0 12px; border: 0; border-radius: 21px; background: #081426; color: #f5f8fa; box-shadow: none; text-align: left; touch-action: none; user-select: none; cursor: grab; }
 .compact-overlay:active { cursor: grabbing; }

@@ -19,6 +19,11 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm test
+      - name: Verify tag matches package version
+        shell: pwsh
+        run: |
+          $expected = "v$((Get-Content -Raw package.json | ConvertFrom-Json).version)"
+          if ("${{ github.ref_name }}" -ne $expected) { throw "Tag ${{ github.ref_name }} does not match $expected" }
       - run: npm run pack:win
         env:
           CSC_IDENTITY_AUTO_DISCOVERY: "false"
@@ -28,6 +33,9 @@ jobs:
       - uses: softprops/action-gh-release@v2
         with:
           generate_release_notes: true
+          fail_on_unmatched_files: true
           files: |
             dist/*.exe
+            dist/*.blockmap
+            dist/latest.yml
             dist/SHA256SUMS.txt

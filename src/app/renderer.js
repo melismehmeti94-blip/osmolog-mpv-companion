@@ -26,6 +26,8 @@ function createPreviewBridge() {
     runOnlyWithMpv: false,
     autoLaunchStatus: "off",
     autoLaunchMessage: "Automatic MPV start is off.",
+    distribution: "installed",
+    updateStatus: { state: "current" },
     pendingSegments: 0
   };
   const stateListeners = [];
@@ -140,6 +142,23 @@ function render(next) {
   byId("autoLaunchStatus").textContent = autoLaunchLabels[state.autoLaunchStatus] || "Off";
   byId("autoLaunchStatus").title = state.autoLaunchMessage || "";
   byId("autoLaunchStatus").className = state.autoLaunchStatus === "enabled" ? "is-enabled" : state.autoLaunchStatus === "error" ? "is-error" : "";
+  byId("autoLaunchDescription").textContent = state.distribution === "portable"
+    ? "Keep this EXE in a permanent folder before enabling. It closes safely when MPV closes."
+    : "It closes safely when MPV closes.";
+  const update = state.updateStatus || {};
+  const updateVersion = update.version ? ` ${update.version}` : "";
+  const updateMessages = {
+    portable: "Portable version · download updates manually from GitHub Releases.",
+    disabled: "Automatic updates are available in the installed version.",
+    idle: "Installed version · updates download automatically.",
+    checking: "Checking for a companion update…",
+    current: "Companion is up to date.",
+    downloading: `Downloading Companion${updateVersion} in the background…`,
+    ready: `Companion${updateVersion} is ready and will install after this app closes.`,
+    error: "Could not check for updates; the companion will retry automatically."
+  };
+  byId("updateStatus").textContent = updateMessages[update.state] || updateMessages.disabled;
+  byId("updateStatus").className = update.state === "ready" ? "is-ready" : update.state === "error" ? "is-error" : "";
 
   byId("compactTime").textContent = duration(state.sessionSeconds);
   byId("compactLanguage").textContent = languageName.toUpperCase();

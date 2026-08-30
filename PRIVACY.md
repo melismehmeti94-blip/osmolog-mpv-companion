@@ -24,6 +24,13 @@ default log. The companion does not contact Osmolog's cloud services itself.
 Once the extension accepts a segment, that segment follows the extension's
 normal local storage, export, and optional sync behavior.
 
+The installed edition checks this project's public GitHub Releases feed over
+HTTPS and downloads a newer installer when available. These requests disclose
+ordinary network information such as the device's IP address and user agent to
+GitHub, but they do not include media titles, paths, playback activity,
+languages, settings, or Osmolog history. The portable edition does not perform
+automatic update checks.
+
 ## Local files
 
 The companion stores configuration and crash-recovery data under
@@ -33,5 +40,6 @@ The companion stores configuration and crash-recovery data under
 - `pending.jsonl`: completed segments waiting for extension acknowledgement;
 - the current draft checkpoint used after an unexpected stop.
 
-Uninstalling the portable executable does not automatically remove this data.
-Delete `%APPDATA%\Osmolog` manually if you also want to remove companion data.
+Removing the portable executable or uninstalling the installed edition does
+not automatically remove this data. Delete `%APPDATA%\Osmolog` manually if you
+also want to remove companion data.

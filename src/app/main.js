@@ -4,8 +4,10 @@ const fs = require("node:fs");
 const path = require("node:path");
 const childProcess = require("node:child_process");
 const { app, BrowserWindow, ipcMain, Menu, nativeImage, Tray } = require("electron");
+const { autoUpdater } = require("electron-updater");
 const { CompanionService } = require("../service");
 const { companionExecutablePath, installMpvAutoLauncher, removeMpvAutoLauncher } = require("../mpv/auto-launch");
+const { createAutoUpdateController, isPortableBuild } = require("./auto-update");
 const { syncWithChrome } = require("./sync-controller");
 
 let mainWindow = null;
@@ -20,11 +22,20 @@ let latestState = { ready: false };
 let launcherOptions = null;
 let detectedMpvConfigDirectory = "";
 let launcherStatus = { status: "off", message: "Automatic MPV start is off." };
+let updateController = null;
+let updateStatus = { state: "disabled" };
 
 if (!app.requestSingleInstanceLock()) app.quit();
 
 function sendState(state = latestState) {
-  latestState = { ...state, autoLaunchStatus: launcherStatus.status, autoLaunchMessage: launcherStatus.message };
+  const distribution = isPortableBuild(process.env) ? "portable" : app.isPackaged ? "installed" : "development";
+  latestState = {
+    ...state,
+    autoLaunchStatus: launcherStatus.status,
+    autoLaunchMessage: launcherStatus.message,
+    distribution,
+    updateStatus
+  };
   if (mainWindow && !mainWindow.isDestroyed()) mainWindow.webContents.send("companion-state", latestState);
   if (!mainWindow || mainWindow.isDestroyed()) return;
   if (latestState.fullscreen && mainWindow.isVisible()) {
@@ -191,6 +202,7 @@ function openDashboard() {
 async function quitCompanion() {
   if (quitting) return;
   quitting = true;
+  updateController?.stop();
   await service?.shutdown("app quit");
   app.quit();
 }
@@ -299,6 +311,16 @@ app.whenReady().then(async () => {
   });
   service.on("exit-requested", () => void quitCompanion());
   await service.start();
+  updateController = createAutoUpdateController({
+    app,
+    updater: autoUpdater,
+    logger: service.logger,
+    onStatus: status => {
+      updateStatus = status;
+      sendState();
+    }
+  });
+  updateController.start();
   if (service.config?.runOnlyWithMpv === true) {
     const directory = currentMpvConfigDirectory();
     if (directory) enableRunOnlyWithMpv();

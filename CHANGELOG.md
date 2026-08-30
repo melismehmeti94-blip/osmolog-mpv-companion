@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.1.0 — 2026-08-30
+
+- Added a per-user Windows installer that requires no administrator access.
+- Added automatic background updates for the installed edition through public
+  GitHub Releases; downloaded updates install after the companion closes.
+- Kept the portable EXE as a separate manual-update download.
+
 ## 1.0.2 — 2026-08-30
 
 - Added clear in-app guidance to keep the portable EXE in a permanent folder before enabling automatic MPV startup.

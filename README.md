@@ -12,9 +12,13 @@ by the extension, or close it to the system tray.
 
 ## Download
 
-Download the latest `Osmolog-Companion-*-x64.exe` from
-[GitHub Releases](https://github.com/melismehmeti94-blip/osmolog-mpv-companion/releases).
-It is a portable Windows application: place it somewhere permanent and run it.
+Download the latest release from
+[GitHub Releases](https://github.com/melismehmeti94-blip/osmolog-mpv-companion/releases):
+
+- **Setup** is recommended. It installs for the current Windows user without
+  administrator access and downloads future companion updates automatically.
+- **Portable** is the existing no-install EXE. Place it somewhere permanent
+  before enabling automatic MPV startup; portable updates remain manual.
 
 The current builds are unsigned. Windows SmartScreen may therefore show an
 Unknown publisher warning. Verify that the download came from this repository
@@ -84,6 +88,12 @@ without asking users to enter a path. If mpv is closed when you enable the
 setting, open mpv once to finish setup. If you move the portable companion
 executable, run it once manually so the launcher can repair its saved path.
 
+The installed edition checks the public GitHub Releases feed after startup and
+periodically while it is running. A newer installer downloads in the
+background, then applies after the companion closes so active tracking and the
+crash-safe journal are finalized first. The portable edition never performs
+automatic update checks.
+
 ## Reliability and privacy
 
 Completed segments are journaled before delivery. Chrome may be closed:
@@ -143,8 +153,8 @@ GitHub Release.
 
 ## Current scope
 
-Version 1 supports Windows and mpv. VLC, macOS, Linux, native messaging, a
-traditional installer, and code signing are not included yet.
+Version 1 supports Windows and mpv. VLC, macOS, Linux, native messaging, and
+code signing are not included yet.
 
 ## License
 
