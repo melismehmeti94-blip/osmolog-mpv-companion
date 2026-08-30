@@ -64,6 +64,8 @@ class MpvIpcClient extends EventEmitter {
       for (const property of TRACK_LANGUAGE_PROPERTIES) await this.refreshProperty(property);
       const executableDirectory = await this.command(["expand-path", "~~exe_dir/"]).catch(() => "");
       if (executableDirectory) this.emit("executable-directory", executableDirectory);
+      const configDirectory = await this.command(["expand-path", "~~home/"]).catch(() => "");
+      if (configDirectory) this.emit("config-directory", configDirectory);
       const focused = await this.getProperty("focused").catch(() => null);
       this.focusSupported = typeof focused === "boolean";
       this.emit("focus-support", this.focusSupported);

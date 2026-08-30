@@ -35,6 +35,11 @@ class MockMpvServer {
     };
     this.commands = [];
     this.observers = new Map();
+    this.paths = {
+      "~~exe_dir/": "C:\\Portable\\mpv",
+      "~~home/": "C:\\Portable\\mpv\\portable_config",
+      ...(options.paths || {})
+    };
   }
 
   start() {
@@ -74,6 +79,9 @@ class MockMpvServer {
     } else if (name === "get_property") {
       if (!Object.prototype.hasOwnProperty.call(this.properties, command[1])) error = "property unavailable";
       else data = this.properties[command[1]];
+    } else if (name === "expand-path") {
+      if (!Object.prototype.hasOwnProperty.call(this.paths, command[1])) error = "path unavailable";
+      else data = this.paths[command[1]];
     }
     socket.write(`${JSON.stringify({ request_id: message.request_id, error, data })}\n`);
   }

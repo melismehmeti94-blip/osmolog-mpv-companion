@@ -40,13 +40,30 @@ test("desktop shell keeps the requested minimize, tray-close, and exact compact 
   assert.match(renderer, /windowAction\("compact"\)/);
   assert.match(renderer, /windowAction\("hide"\)/);
   assert.match(renderer, /windowAction\("move"/);
-  assert.match(main, /state\.fullscreen && mainWindow\.isVisible\(\)/);
+  assert.match(main, /latestState\.fullscreen && mainWindow\.isVisible\(\)/);
   assert.match(renderer, /"Tracking now"/);
   assert.match(renderer, /"Playback paused"/);
   assert.match(renderer, /"Ready to track"/);
   assert.match(renderer, /saved for future MPV sessions/);
   assert.match(renderer, /`\$\{value\}s`/);
   assert.match(renderer, /`\$\{hours\}h \$\{String\(minutes\)\.padStart\(2, "0"\)\}m`/);
+});
+
+test("lifecycle controls expose auto-start and in-place sync without technical path fields", () => {
+  const html = read("index.html");
+  const preload = read("preload.js");
+  const renderer = read("renderer.js");
+  const main = read("main.js");
+
+  assert.match(html, /id="runOnlyWithMpvToggle"/);
+  assert.match(html, /Automatically open when MPV opens/);
+  assert.match(html, /id="syncNowButton"[^>]*>Sync now<\/button>/);
+  assert.doesNotMatch(html, /MPV path|configuration folder/);
+  assert.match(preload, /setRunOnlyWithMpv/);
+  assert.match(preload, /syncNow/);
+  assert.match(renderer, /companionApi\.setRunOnlyWithMpv\(toggle\.checked\)/);
+  assert.match(renderer, /companionApi\.syncNow\(\)/);
+  assert.match(main, /syncWithChrome/);
 });
 
 test("before-connection UI automatically discovers Osmolog without exposing extension IDs", () => {

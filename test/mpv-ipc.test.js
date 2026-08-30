@@ -13,8 +13,10 @@ test("real IPC client observes the verified mpv contract and refreshes track lan
   const client = new MpvIpcClient({ pipePath: server.pipePath, logger: { warn() {} } });
   t.after(() => client.stop());
   const loaded = once(client, "file-loaded");
+  const configDirectory = once(client, "config-directory");
   client.start();
   const [snapshot] = await loaded;
+  assert.deepEqual(await configDirectory, ["C:\\Portable\\mpv\\portable_config"]);
   assert.equal(snapshot.properties["current-tracks/audio/lang"], "jpn");
   assert.equal(snapshot.properties["current-tracks/sub/lang"], "eng");
   const observed = new Set(server.commands.filter(Array.isArray).filter(command => command[0] === "observe_property").map(command => command[2]));

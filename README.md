@@ -71,11 +71,18 @@ the companion and open Osmolog once to trust the new installation.
 - **−** switches to the movable compact timer.
 - **×** keeps tracking in the Windows tray.
 - The companion hides automatically while mpv is fullscreen.
+- Enable **Automatically open when MPV opens** to let mpv start the companion
+  and let the companion safely close after mpv closes.
+- Select **Sync now** to send queued activity immediately. If Chrome is already
+  open, Osmolog uses that running browser without opening another window. If
+  Chrome is closed, the companion opens Osmolog once so it can reconnect.
 
-On first successful contact with mpv, the companion installs its managed
-`osmolog-companion.lua` script. Later, opening mpv starts the companion if it is
-not already running. If you move the portable companion executable, run it once
-manually while mpv is open so the launcher can update to the new path.
+When automatic opening is enabled, the companion asks mpv for its active
+configuration folder and installs only its managed `osmolog-companion.lua`
+script there. This supports standard, portable, and custom mpv locations
+without asking users to enter a path. If mpv is closed when you enable the
+setting, open mpv once to finish setup. If you move the portable companion
+executable, run it once manually so the launcher can repair its saved path.
 
 ## Reliability and privacy
 
@@ -83,6 +90,10 @@ Completed segments are journaled before delivery. Chrome may be closed:
 unacknowledged time remains in `%APPDATA%\Osmolog\pending.jsonl` and is replayed
 when the extension reconnects. An in-progress segment is checkpointed for crash
 recovery.
+
+Chrome does not need to be open when mpv closes. The companion finalizes the
+current activity and stores it locally before exiting; it will be delivered the
+next time Osmolog reconnects.
 
 The full media path stays inside the companion. Osmolog receives only the
 resolved language, cleaned title, timing, selected track-language tags,
@@ -126,7 +137,7 @@ Build the portable executable locally:
 npm run dist
 ```
 
-Artifacts are written to `dist/`. Pushing a tag such as `v1.0.0` runs the
+Artifacts are written to `dist/`. Pushing a tag such as `v1.0.1` runs the
 Windows release workflow and attaches the executable and its SHA-256 checksum to a
 GitHub Release.
 

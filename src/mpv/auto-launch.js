@@ -39,17 +39,27 @@ mp.add_timeout(0.1, launch_osmolog)
 `;
 }
 
-function installMpvAutoLauncher(options = {}) {
+function companionExecutablePath(options = {}) {
+  const environment = options.environment || process.env;
+  return String(environment.PORTABLE_EXECUTABLE_FILE || options.execPath || "").trim();
+}
+
+function launcherFile(options = {}) {
   const environment = options.environment || process.env;
   const appData = String(environment.APPDATA || "").trim();
-  const args = launchArguments(options);
-  if (process.platform !== "win32" || !appData || !args.length) return { ok: false, reason: "unsupported" };
-
+  const explicitConfig = String(options.mpvConfigDirectory || "").trim();
   const executableDirectory = String(options.mpvExecutableDirectory || "").trim();
   const portableConfig = executableDirectory ? path.join(executableDirectory, "portable_config") : "";
-  const configDirectory = portableConfig && fs.existsSync(portableConfig) ? portableConfig : path.join(appData, "mpv");
-  const directory = path.join(configDirectory, "scripts");
-  const file = path.join(directory, SCRIPT_NAME);
+  const configDirectory = explicitConfig || (portableConfig && fs.existsSync(portableConfig) ? portableConfig : appData ? path.join(appData, "mpv") : "");
+  return configDirectory ? path.join(configDirectory, "scripts", SCRIPT_NAME) : "";
+}
+
+function installMpvAutoLauncher(options = {}) {
+  const file = launcherFile(options);
+  const args = launchArguments({ ...options, execPath: companionExecutablePath(options) });
+  if (process.platform !== "win32" || !file || !args.length) return { ok: false, reason: "unsupported" };
+
+  const directory = path.dirname(file);
   const source = launcherSource(args);
   let existing = "";
   try { existing = fs.readFileSync(file, "utf8"); }
@@ -67,4 +77,34 @@ function installMpvAutoLauncher(options = {}) {
   }
 }
 
-module.exports = { MANAGED_HEADER, SCRIPT_NAME, installMpvAutoLauncher, launcherSource, launchArguments, luaString };
+function removeMpvAutoLauncher(options = {}) {
+  const file = launcherFile(options);
+  if (process.platform !== "win32" || !file) return { ok: false, reason: "unsupported" };
+  let existing = "";
+  try { existing = fs.readFileSync(file, "utf8"); }
+  catch (error) {
+    if (error.code === "ENOENT") return { ok: true, removed: false, file };
+    return { ok: false, reason: "read-failed", message: error.message, file };
+  }
+  if (!existing.startsWith(MANAGED_HEADER)) {
+    return { ok: false, reason: "conflict", message: `${file} is not managed by Osmolog.`, file };
+  }
+  try {
+    fs.unlinkSync(file);
+    return { ok: true, removed: true, file };
+  } catch (error) {
+    return { ok: false, reason: "remove-failed", message: error.message, file };
+  }
+}
+
+module.exports = {
+  MANAGED_HEADER,
+  SCRIPT_NAME,
+  companionExecutablePath,
+  installMpvAutoLauncher,
+  launcherFile,
+  launcherSource,
+  launchArguments,
+  luaString,
+  removeMpvAutoLauncher
+};

@@ -15,6 +15,8 @@ const DEFAULTS = Object.freeze({
     { match: "D:\\Media\\English", language: "en" }
   ],
   recordTitles: true,
+  runOnlyWithMpv: false,
+  mpvConfigDirectory: "",
   speedCreditMin: 1,
   speedCreditMax: 2,
   overlay: { toastOnLoad: true, persistent: false }
@@ -36,6 +38,8 @@ function normalize(raw = {}) {
       .filter(rule => rule.match && rule.language)
       .slice(0, 100),
     recordTitles: raw.recordTitles !== false,
+    runOnlyWithMpv: raw.runOnlyWithMpv === true,
+    mpvConfigDirectory: String(raw.mpvConfigDirectory || "").replace(/[\r\n]/g, "").trim().slice(0, 2048),
     speedCreditMin: minimum,
     speedCreditMax: maximum,
     overlay: {

@@ -22,7 +22,11 @@ function createPreviewBridge() {
     sessionPassiveSeconds: preview === "tracking" ? 60 : 0,
     todaySeconds: preview === "tracking" ? 4825 : 0,
     speed: 1,
-    pairingSeconds: preview === "tracking" ? 0 : 300
+    pairingSeconds: preview === "tracking" ? 0 : 300,
+    runOnlyWithMpv: false,
+    autoLaunchStatus: "off",
+    autoLaunchMessage: "Automatic MPV start is off.",
+    pendingSegments: 0
   };
   const stateListeners = [];
   const modeListeners = [];
@@ -36,6 +40,17 @@ function createPreviewBridge() {
     },
     startPairing: async () => { previewState = { ...previewState, pairingSeconds: 60 }; publish(); return previewState; },
     setLanguage: async languageCode => { previewState = { ...previewState, languageCode }; publish(); return { ok: true, scope: previewState.fileLoaded ? "file" : "default" }; },
+    setRunOnlyWithMpv: async enabled => {
+      previewState = {
+        ...previewState,
+        runOnlyWithMpv: enabled,
+        autoLaunchStatus: enabled ? "enabled" : "off",
+        autoLaunchMessage: enabled ? "Companion will open and close with MPV." : "Automatic MPV start is off."
+      };
+      publish();
+      return { ok: true, message: previewState.autoLaunchMessage, state: previewState };
+    },
+    syncNow: async () => ({ ok: true, message: "Everything is already synced." }),
     openDashboard: async () => false
   });
 }
@@ -119,6 +134,13 @@ function render(next) {
     : state.extensionConnected ? "Closing keeps tracking in the tray." : state.paired ? "Osmolog will reconnect automatically in the background." : "Open Osmolog once to finish the local connection.";
   byId("pairAgain").hidden = state.extensionConnected;
 
+  const lifecycleToggle = byId("runOnlyWithMpvToggle");
+  if (document.activeElement !== lifecycleToggle) lifecycleToggle.checked = state.runOnlyWithMpv === true;
+  const autoLaunchLabels = { enabled: "Enabled", "needs-mpv": "Needs MPV", error: "Needs attention", off: "Off" };
+  byId("autoLaunchStatus").textContent = autoLaunchLabels[state.autoLaunchStatus] || "Off";
+  byId("autoLaunchStatus").title = state.autoLaunchMessage || "";
+  byId("autoLaunchStatus").className = state.autoLaunchStatus === "enabled" ? "is-enabled" : state.autoLaunchStatus === "error" ? "is-error" : "";
+
   byId("compactTime").textContent = duration(state.sessionSeconds);
   byId("compactLanguage").textContent = languageName.toUpperCase();
   byId("compactDot").className = state.mode === "active" ? "is-active" : state.mode === "passive" ? "is-passive" : "";
@@ -166,6 +188,25 @@ byId("languageSelect").addEventListener("change", async event => {
 byId("openDashboard").addEventListener("click", async () => {
   const opened = await companionApi.openDashboard();
   if (!opened) byId("footerStatus").textContent = "Open Osmolog in Chrome to view the dashboard.";
+});
+byId("runOnlyWithMpvToggle").addEventListener("change", async event => {
+  const toggle = event.currentTarget;
+  toggle.disabled = true;
+  byId("lifecycleFeedback").textContent = toggle.checked ? "Setting up MPV auto-start…" : "Removing MPV auto-start…";
+  const result = await companionApi.setRunOnlyWithMpv(toggle.checked);
+  byId("lifecycleFeedback").textContent = result?.message || (result?.ok ? "Lifecycle setting updated." : "Could not update this setting.");
+  if (!result?.ok) toggle.checked = state.runOnlyWithMpv === true;
+  toggle.disabled = false;
+});
+byId("syncNowButton").addEventListener("click", async event => {
+  const button = event.currentTarget;
+  button.disabled = true;
+  button.textContent = "Syncing…";
+  byId("lifecycleFeedback").textContent = "Connecting to Osmolog…";
+  const result = await companionApi.syncNow();
+  byId("lifecycleFeedback").textContent = result?.message || "Could not sync right now.";
+  button.textContent = "Sync now";
+  button.disabled = false;
 });
 
 companionApi.onState(render);

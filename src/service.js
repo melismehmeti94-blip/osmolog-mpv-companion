@@ -78,10 +78,14 @@ class CompanionService extends EventEmitter {
     this.focusTimer = null;
     this.tickTimer = null;
     this.setupTimer = null;
+    this.mpvExitTimer = null;
     this.started = false;
     this.shuttingDown = false;
     this.mpvConnected = false;
     this.connectedOnce = false;
+    this.mpvConfigDirectory = "";
+    this.mpvExitDelayMs = Math.max(250, Number(options.mpvExitDelayMs) || 3000);
+    this.deliveryGraceMs = Math.max(0, Number(options.deliveryGraceMs) || 1500);
   }
 
   log(level, message) {
@@ -101,6 +105,8 @@ class CompanionService extends EventEmitter {
       pairingSeconds: this.transport?.pairingRemaining?.() || 0,
       extensionId: validExtensionId(this.config?.extensionId) ? this.config.extensionId : "",
       pendingSegments: this.journal?.list?.().length || 0,
+      runOnlyWithMpv: this.config?.runOnlyWithMpv === true,
+      mpvConfigDirectoryDetected: Boolean(this.mpvConfigDirectory || this.config?.mpvConfigDirectory),
       playing: playback.playing === true,
       paused: this.tracker?.properties?.pause === true,
       mode: playback.mode || "",
@@ -199,6 +205,8 @@ class CompanionService extends EventEmitter {
     });
 
     this.mpv.on("connected", () => {
+      clearTimeout(this.mpvExitTimer);
+      this.mpvExitTimer = null;
       this.mpvConnected = true;
       this.connectedOnce = true;
       this.logger.info("Connected to mpv.");
@@ -207,12 +215,18 @@ class CompanionService extends EventEmitter {
       this.publish();
     });
     this.mpv.on("executable-directory", directory => this.emit("mpv-executable-directory", directory));
+    this.mpv.on("config-directory", directory => {
+      this.mpvConfigDirectory = String(directory || "").trim();
+      this.emit("mpv-config-directory", this.mpvConfigDirectory);
+      this.publish();
+    });
     this.mpv.on("disconnected", () => {
       this.mpvConnected = false;
       this.logger.info("mpv disconnected; waiting for it to return.");
       this.tracker.endFile();
       this.transport.broadcast({ type: "state", mpvConnected: false, playing: false, languageCode: null, mode: null });
       this.publish();
+      if (this.connectedOnce && this.config?.runOnlyWithMpv === true) this.scheduleExitAfterMpv();
     });
     this.mpv.on("connection-error", error => {
       if (this.connectedOnce && !["ENOENT", "ECONNREFUSED"].includes(error.code)) this.logger.warn(`mpv connection failed: ${error.message}`);
@@ -287,6 +301,48 @@ class CompanionService extends EventEmitter {
     return { ok: true, scope: changedCurrentFile ? "file-and-default" : "default", state: this.publicState() };
   }
 
+  setRunOnlyWithMpv(enabled, mpvConfigDirectory = "") {
+    this.config = this.configStore.update({
+      runOnlyWithMpv: enabled === true,
+      mpvConfigDirectory: String(mpvConfigDirectory || this.mpvConfigDirectory || this.config?.mpvConfigDirectory || "").trim()
+    });
+    if (!this.config.runOnlyWithMpv) {
+      clearTimeout(this.mpvExitTimer);
+      this.mpvExitTimer = null;
+    }
+    this.publish();
+    return this.publicState();
+  }
+
+  syncPending() {
+    const pending = this.journal?.list?.() || [];
+    let sent = 0;
+    for (const event of pending) sent += this.transport?.broadcast?.({ type: "segment", ...event }) || 0;
+    this.publish();
+    return {
+      ok: (this.transport?.clients?.size || 0) > 0,
+      connected: (this.transport?.clients?.size || 0) > 0,
+      pending: pending.length,
+      transmissions: sent
+    };
+  }
+
+  scheduleExitAfterMpv() {
+    if (this.mpvExitTimer || this.shuttingDown) return;
+    this.mpvExitTimer = setTimeout(async () => {
+      this.mpvExitTimer = null;
+      if (this.mpvConnected || this.shuttingDown || this.config?.runOnlyWithMpv !== true) return;
+      const deadline = Date.now() + this.deliveryGraceMs;
+      while ((this.transport?.clients?.size || 0) > 0 && (this.journal?.list?.().length || 0) > 0 && Date.now() < deadline) {
+        await new Promise(resolve => setTimeout(resolve, 50));
+      }
+      if (!this.mpvConnected && !this.shuttingDown && this.config?.runOnlyWithMpv === true) {
+        this.emit("exit-requested", "mpv closed");
+      }
+    }, this.mpvExitDelayMs);
+    this.mpvExitTimer.unref?.();
+  }
+
   dashboardUrl(view = "settings") {
     if (!validExtensionId(this.config?.extensionId)) return "";
     const safeView = ["overview", "settings"].includes(view) ? view : "settings";
@@ -304,6 +360,7 @@ class CompanionService extends EventEmitter {
     clearInterval(this.tickTimer);
     clearInterval(this.focusTimer);
     clearTimeout(this.setupTimer);
+    clearTimeout(this.mpvExitTimer);
     this.tracker?.endFile();
     await this.overlay?.remove();
     this.mpv?.stop();

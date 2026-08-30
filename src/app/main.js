@@ -5,7 +5,8 @@ const path = require("node:path");
 const childProcess = require("node:child_process");
 const { app, BrowserWindow, ipcMain, Menu, nativeImage, Tray } = require("electron");
 const { CompanionService } = require("../service");
-const { installMpvAutoLauncher } = require("../mpv/auto-launch");
+const { companionExecutablePath, installMpvAutoLauncher, removeMpvAutoLauncher } = require("../mpv/auto-launch");
+const { syncWithChrome } = require("./sync-controller");
 
 let mainWindow = null;
 let tray = null;
@@ -17,20 +18,27 @@ let windowMode = "expanded";
 let hiddenForFullscreen = false;
 let latestState = { ready: false };
 let launcherOptions = null;
+let detectedMpvConfigDirectory = "";
+let launcherStatus = { status: "off", message: "Automatic MPV start is off." };
 
 if (!app.requestSingleInstanceLock()) app.quit();
 
 function sendState(state = latestState) {
-  latestState = state;
-  if (mainWindow && !mainWindow.isDestroyed()) mainWindow.webContents.send("companion-state", state);
+  latestState = { ...state, autoLaunchStatus: launcherStatus.status, autoLaunchMessage: launcherStatus.message };
+  if (mainWindow && !mainWindow.isDestroyed()) mainWindow.webContents.send("companion-state", latestState);
   if (!mainWindow || mainWindow.isDestroyed()) return;
-  if (state.fullscreen && mainWindow.isVisible()) {
+  if (latestState.fullscreen && mainWindow.isVisible()) {
     hiddenForFullscreen = true;
     mainWindow.hide();
-  } else if (!state.fullscreen && hiddenForFullscreen) {
+  } else if (!latestState.fullscreen && hiddenForFullscreen) {
     hiddenForFullscreen = false;
     mainWindow.showInactive();
   }
+}
+
+function updateLauncherStatus(status, message) {
+  launcherStatus = { status, message };
+  sendState();
 }
 
 function showExpanded() {
@@ -41,7 +49,7 @@ function showExpanded() {
   windowMode = "expanded";
   mainWindow.setAlwaysOnTop(false);
   mainWindow.setResizable(false);
-  mainWindow.setBounds(expandedBounds || { x: current.x, y: current.y, width: 620, height: 470 }, true);
+  mainWindow.setBounds(expandedBounds || { x: current.x, y: current.y, width: 620, height: 540 }, true);
   mainWindow.webContents.send("window-mode", "expanded");
   if (latestState.fullscreen) {
     hiddenForFullscreen = true;
@@ -95,6 +103,84 @@ function launchChromeDashboard(url, environment = process.env) {
   }
 }
 
+function isChromeRunning(execFile = childProcess.execFile) {
+  if (process.platform !== "win32") return Promise.resolve(false);
+  return new Promise(resolve => {
+    execFile("tasklist.exe", ["/FI", "IMAGENAME eq chrome.exe", "/FO", "CSV", "/NH"], { windowsHide: true }, (error, stdout) => {
+      resolve(!error && /^"chrome\.exe"/im.test(String(stdout || "")));
+    });
+  });
+}
+
+function currentMpvConfigDirectory() {
+  return String(detectedMpvConfigDirectory || service?.config?.mpvConfigDirectory || "").trim();
+}
+
+function launcherOptionsFor(directory = currentMpvConfigDirectory()) {
+  return { ...launcherOptions, mpvConfigDirectory: directory };
+}
+
+function enableRunOnlyWithMpv() {
+  const directory = currentMpvConfigDirectory();
+  if (!directory) {
+    service.setRunOnlyWithMpv(true, "");
+    updateLauncherStatus("needs-mpv", "Open MPV once so Osmolog can detect its configuration folder.");
+    return { ok: true, message: launcherStatus.message, state: latestState };
+  }
+  const result = installMpvAutoLauncher(launcherOptionsFor(directory));
+  if (!result.ok) {
+    updateLauncherStatus("error", result.message || "Could not install MPV auto-start.");
+    return { ok: false, message: launcherStatus.message, state: latestState };
+  }
+  service.setRunOnlyWithMpv(true, directory);
+  updateLauncherStatus("enabled", "Companion will open and close with MPV.");
+  return { ok: true, message: launcherStatus.message, state: latestState, file: result.file };
+}
+
+function disableRunOnlyWithMpv() {
+  const directories = [...new Set([
+    detectedMpvConfigDirectory,
+    service?.config?.mpvConfigDirectory
+  ].map(value => String(value || "").trim()).filter(Boolean))];
+  const results = directories.map(directory => removeMpvAutoLauncher(launcherOptionsFor(directory)));
+  const failure = results.find(result => !result.ok && !["unsupported", "conflict"].includes(result.reason));
+  if (failure) {
+    updateLauncherStatus("error", failure.message || "Could not remove MPV auto-start.");
+    return { ok: false, message: launcherStatus.message, state: latestState };
+  }
+  service.setRunOnlyWithMpv(false, currentMpvConfigDirectory());
+  updateLauncherStatus("off", "Automatic MPV start is off.");
+  return { ok: true, message: launcherStatus.message, state: latestState };
+}
+
+async function waitForExtensionConnection(timeoutMs = 8000) {
+  const deadline = Date.now() + timeoutMs;
+  while (Date.now() < deadline) {
+    if ((service?.transport?.clients?.size || 0) > 0) return true;
+    await new Promise(resolve => setTimeout(resolve, 200));
+  }
+  return (service?.transport?.clients?.size || 0) > 0;
+}
+
+async function waitForJournalAcks(timeoutMs = 3000) {
+  const deadline = Date.now() + timeoutMs;
+  while (Date.now() < deadline) {
+    if ((service?.journal?.list?.().length || 0) === 0) return true;
+    await new Promise(resolve => setTimeout(resolve, 100));
+  }
+  return (service?.journal?.list?.().length || 0) === 0;
+}
+
+async function syncNow() {
+  return syncWithChrome({
+    service,
+    isChromeRunning,
+    launchChrome: launchChromeDashboard,
+    waitForConnection: waitForExtensionConnection,
+    waitForAcks: waitForJournalAcks
+  });
+}
+
 function openDashboard() {
   if (!service) return false;
   if (service.openDashboard("settings")) return true;
@@ -126,7 +212,7 @@ function createTray() {
 function createWindow() {
   mainWindow = new BrowserWindow({
     width: 620,
-    height: 470,
+    height: 540,
     minWidth: 156,
     minHeight: 42,
     show: false,
@@ -179,6 +265,8 @@ function registerIpc() {
   ipcMain.handle("set-extension-id", (_event, extensionId) => service.setExtensionId(extensionId));
   ipcMain.handle("set-language", (_event, languageCode) => service.setLanguage(languageCode));
   ipcMain.handle("open-dashboard", () => openDashboard());
+  ipcMain.handle("set-run-only-with-mpv", (_event, enabled) => enabled ? enableRunOnlyWithMpv() : disableRunOnlyWithMpv());
+  ipcMain.handle("sync-now", () => syncNow());
 }
 
 app.on("second-instance", () => showExpanded());
@@ -200,21 +288,22 @@ app.whenReady().then(async () => {
   service.on("log", entry => mainWindow?.webContents.send("companion-log", entry));
   launcherOptions = {
     environment: process.env,
-    execPath: process.execPath,
+    execPath: companionExecutablePath({ environment: process.env, execPath: process.execPath }),
     appPath: app.getAppPath(),
     packaged: app.isPackaged
   };
-  service.on("mpv-executable-directory", directory => {
-    const portableLauncher = installMpvAutoLauncher({ ...launcherOptions, mpvExecutableDirectory: directory });
-    if (!portableLauncher.ok && portableLauncher.reason !== "unsupported") {
-      service.logger.warn(portableLauncher.message || "Could not install the portable MPV startup launcher.");
-    }
+  service.on("mpv-config-directory", directory => {
+    detectedMpvConfigDirectory = String(directory || "").trim();
+    if (service.config?.runOnlyWithMpv === true) enableRunOnlyWithMpv();
+    else updateLauncherStatus("off", "Automatic MPV start is off.");
   });
-  const launcher = installMpvAutoLauncher(launcherOptions);
-  if (!launcher.ok && launcher.reason !== "unsupported") {
-    service.logger.warn(launcher.message || "Could not install the MPV startup launcher.");
-  }
+  service.on("exit-requested", () => void quitCompanion());
   await service.start();
+  if (service.config?.runOnlyWithMpv === true) {
+    const directory = currentMpvConfigDirectory();
+    if (directory) enableRunOnlyWithMpv();
+    else updateLauncherStatus("needs-mpv", "Open MPV once so Osmolog can repair auto-start.");
+  }
   sendState(service.publicState());
 }).catch(async error => {
   await service?.shutdown("startup error").catch(() => null);
@@ -222,4 +311,4 @@ app.whenReady().then(async () => {
   sendState(latestState);
 });
 
-module.exports = { findChromeExecutable, launchChromeDashboard };
+module.exports = { findChromeExecutable, isChromeRunning, launchChromeDashboard };
