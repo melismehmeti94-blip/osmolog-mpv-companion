@@ -57,6 +57,7 @@ test("lifecycle controls expose auto-start and in-place sync without technical p
 
   assert.match(html, /id="runOnlyWithMpvToggle"/);
   assert.match(html, /Automatically open when MPV opens/);
+  assert.match(html, /Keep this EXE in a permanent folder before enabling/);
   assert.match(html, /id="syncNowButton"[^>]*>Sync now<\/button>/);
   assert.doesNotMatch(html, /MPV path|configuration folder/);
   assert.match(preload, /setRunOnlyWithMpv/);

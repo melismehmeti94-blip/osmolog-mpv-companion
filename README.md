@@ -137,7 +137,7 @@ Build the portable executable locally:
 npm run dist
 ```
 
-Artifacts are written to `dist/`. Pushing a tag such as `v1.0.1` runs the
+Artifacts are written to `dist/`. Pushing a tag such as `v1.0.2` runs the
 Windows release workflow and attaches the executable and its SHA-256 checksum to a
 GitHub Release.
 

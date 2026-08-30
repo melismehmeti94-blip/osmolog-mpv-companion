@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.0.2 — 2026-08-30
+
+- Added clear in-app guidance to keep the portable EXE in a permanent folder before enabling automatic MPV startup.
+
 ## 1.0.1 — 2026-08-30
 
 - Added optional automatic opening with mpv and safe closing after mpv exits.
